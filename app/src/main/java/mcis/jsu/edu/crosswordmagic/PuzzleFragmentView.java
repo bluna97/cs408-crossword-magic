@@ -1,15 +1,19 @@
 package mcis.jsu.edu.crosswordmagic;
 
+import android.app.AlertDialog;
 import android.arch.lifecycle.ViewModelProviders;
+import android.content.DialogInterface;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
+import android.text.InputType;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.support.v7.widget.GridLayout;
 import android.view.ViewGroup.LayoutParams;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -19,6 +23,8 @@ public class PuzzleFragmentView extends Fragment implements View.OnClickListener
 
     View root;
     private CrosswordMagicViewModel model;
+    String userInput;
+    int boxNumber;
 
     public PuzzleFragmentView() {}
 
@@ -27,6 +33,9 @@ public class PuzzleFragmentView extends Fragment implements View.OnClickListener
 
         super.onCreate(savedInstanceState);
         model = ViewModelProviders.of(getActivity()).get(CrosswordMagicViewModel.class);
+
+        userInput = "";
+        boxNumber = 0;
 
     }
 
@@ -212,6 +221,7 @@ public class PuzzleFragmentView extends Fragment implements View.OnClickListener
         int col = Integer.parseInt(tag.substring(8));
         int index = (row * model.getPuzzleHeight()) + col;
 
+
         /* Get Box Numbers from Model */
 
         Integer[][] numbers = model.getNumbers();
@@ -220,21 +230,66 @@ public class PuzzleFragmentView extends Fragment implements View.OnClickListener
 
         if (numbers[row][col] != 0) {
 
+            boxNumber = numbers[row][col];
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+            builder.setTitle(R.string.input_title);
+            builder.setMessage(R.string.input_text);
+            final EditText input = new EditText(getActivity());
+            input.setInputType(InputType.TYPE_CLASS_TEXT);
+            builder.setView(input);
+            builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface d, int i) {
+                    userInput = input.getText().toString();
+                    compareWords();
+                }
+            });
+            builder.setNegativeButton("CANCEL", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface d, int i) {
+                    userInput = "";
+                    d.cancel();
+                }
+            });
+            AlertDialog aboutDialog = builder.show();
+
             Toast toast=Toast.makeText(getContext(), "You have just tapped Square " + numbers[row][col], Toast.LENGTH_SHORT);
             toast.show();
 
             /* Add an "X" to Clicked Square */
 
-            GridLayout squaresContainer = getActivity().findViewById(R.id.squaresContainer);
-            TextView element = (TextView) squaresContainer.getChildAt(index);
-            element.setText("X");
+
 
             /* Update Grid Contents */
 
-            updatePuzzleView();
 
         }
 
+    }
+
+    private void compareWords() {
+        userInput = userInput.trim();
+        userInput = userInput.toUpperCase();
+        String wordID_A = boxNumber + "A";
+        String wordID_D = boxNumber + "D";
+
+        if(model.getWordByID(wordID_A) != null) {
+            if (model.getWordByID(wordID_A).getWord().equals(userInput)) {
+                model.insertWord(model.getWordByID(wordID_A));
+            }
+        }
+        if(model.getWordByID(wordID_D) != null) {
+            if(model.getWordByID(wordID_D).getWord().equals(userInput)) {
+                model.insertWord(model.getWordByID(wordID_D));
+            }
+        }
+
+        updatePuzzleView();
+        if(model.gameOver()) {
+            Toast toast=Toast.makeText(getContext(), "You have completed the puzzle!", Toast.LENGTH_SHORT);
+            toast.show();
+        }
     }
 
 }

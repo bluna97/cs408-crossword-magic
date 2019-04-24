@@ -137,8 +137,29 @@ public class CrosswordMagicViewModel extends ViewModel {
             // Word object to the "wordMap" hash map; for the key names, use the box number
             // followed by the direction (for example, "16D" for Box # 16, Down).
 
-            puzzleHeight.setValue(15); // DELETE THIS!
-            puzzleWidth.setValue(15); // DELETE THIS!
+            line = br.readLine();
+            line = line.trim();
+            fields = line.split("\t");
+            puzzleHeight.setValue(Integer.parseInt(fields[0]));
+            puzzleWidth.setValue(Integer.parseInt(fields[1]));
+
+            while((line = br.readLine()) != null) {
+
+                fields = line.split("\t");
+                Word word = new Word(fields);
+
+                String key = word.getBox() + word.getDirection();
+                wordMap.put(key, word);
+
+                if(word.getDirection().equals(Word.ACROSS)) {
+                    aString.append(word.getBox() + ". " + word.getClue());
+                    aString.append("\n");
+                }
+                else {
+                    dString.append(word.getBox() + ". " + word.getClue());
+                    dString.append("\n");
+                }
+            }
 
         } catch (Exception e) {}
 
@@ -163,11 +184,63 @@ public class CrosswordMagicViewModel extends ViewModel {
 
             // INSERT YOUR CODE HERE
 
+            int row = w.getRow();
+            int col = w.getColumn();
+            String word = w.getWord();
+            int wordLength = word.length();
+
+            aNumbers[w.getRow()][w.getColumn()] = w.getBox();
+
+            for(int i = 0; i < wordLength; i++) {
+
+                if(w.getDirection().equals(Word.ACROSS)) {
+                    aLetters[row][col + i] = ' ';
+                }
+                else if (w.getDirection().equals(Word.DOWN)){
+                    aLetters[row + i][col] = ' ';
+                }
+            }
+
         }
 
         this.letters.setValue(aLetters);
         this.numbers.setValue(aNumbers);
 
+    }
+
+    public Word getWordByID(String ID) {
+        Word word = words.getValue().get(ID);
+        return word;
+    }
+
+    public void insertWord(Word word) {
+        int row = word.getRow();
+        int col = word.getColumn();
+
+        Character[][] lettersCopy = letters.getValue();
+        if(word.getDirection().equals("A")) {
+            for (int i = 0; i < word.getWord().length(); i++) {
+                lettersCopy[row][col + i] = word.getWord().charAt(i);
+            }
+        }
+
+        else if(word.getDirection().equals("D")) {
+            for (int i = 0; i < word.getWord().length(); i++) {
+                lettersCopy[row + i][col] = word.getWord().charAt(i);
+            }
+        }
+    }
+
+    public boolean gameOver() {
+        Character[][] lettersCopy = letters.getValue();
+        boolean gameFinished = true;
+
+        for(int i = 0; i < puzzleHeight.getValue(); i++) {
+            for(int j = 0; j < puzzleWidth.getValue(); j++) {
+                if(lettersCopy[i][j] == ' ') gameFinished = false;
+            }
+        }
+        return gameFinished;
     }
 
 }
